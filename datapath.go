@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/Kmotiko/gofc/ofprotocol/ofp13"
+	"github.com/naoki9911/gofc/ofprotocol/ofp13"
 )
 
 // datapath
@@ -223,4 +223,8 @@ func (dp *Datapath) Send(message ofp13.OFMessage) bool {
 	// push data
 	(dp.sendBuffer) <- &message
 	return true
+}
+
+func (dp *Datapath) GetDatapathID() uint64 {
+	return dp.datapathId
 }
