@@ -36,7 +36,6 @@ func (c *OFController) HandleSwitchFeatures(msg *ofp13.OfpSwitchFeatures, dp *Da
 }
 
 func (c *OFController) HandleEchoRequest(msg *ofp13.OfpHeader, dp *Datapath) {
-	fmt.Println("recv EchoReq")
 	// send EchoReply
 	echo := ofp13.NewOfpEchoReply()
 	(*dp).Send(echo)
