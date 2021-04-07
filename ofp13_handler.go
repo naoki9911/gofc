@@ -58,6 +58,13 @@ type Of13FlowRemovedHandler interface {
 }
 
 /*****************************************************/
+/* OfpPortStatus                                     */
+/*****************************************************/
+type Of13PortStatusHandler interface {
+	HandlePortStatus(*ofp13.OfpPortStatus, *Datapath)
+}
+
+/*****************************************************/
 /* OfpDescStatsReply                                 */
 /*****************************************************/
 type Of13DescStatsReplyHandler interface {
