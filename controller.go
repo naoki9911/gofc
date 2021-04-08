@@ -9,51 +9,20 @@ import (
 
 var DEFAULT_PORT = 6653
 
-/**
- * basic controller
- */
 type OFController struct {
-	echoInterval int32 // echo interval
+	listener *net.TCPListener
+	conns    []*net.TCPConn
 }
 
 func NewOFController() *OFController {
-	ofc := new(OFController)
-	ofc.echoInterval = 60
-	return ofc
+	controller := &OFController{
+		listener: nil,
+		conns:    make([]*net.TCPConn, 0),
+	}
+	return controller
 }
 
-// func (c *OFController) HandleHello(msg *ofp13.OfpHello, dp *Datapath) {
-// 	fmt.Println("recv Hello")
-// 	// send feature request
-// 	featureReq := ofp13.NewOfpFeaturesRequest()
-// 	Send(dp, featureReq)
-// }
-
-func (c *OFController) HandleSwitchFeatures(msg *ofp13.OfpSwitchFeatures, dp *Datapath) {
-	fmt.Println("recv SwitchFeatures")
-	// handle FeatureReply
-	dp.datapathId = msg.DatapathId
-}
-
-func (c *OFController) HandleEchoRequest(msg *ofp13.OfpHeader, dp *Datapath) {
-	// send EchoReply
-	echo := ofp13.NewOfpEchoReply()
-	(*dp).Send(echo)
-}
-
-func (c *OFController) ConnectionUp() {
-	// handle connection up
-}
-
-func (c *OFController) ConnectionDown() {
-	// handle connection down
-}
-
-func (c *OFController) sendEchoLoop() {
-	// send echo request forever
-}
-
-func ServerLoop(listenPort int) {
+func (c *OFController) ServerLoop(listenPort int) {
 	var port int
 
 	if listenPort <= 0 || listenPort >= 65536 {
@@ -63,9 +32,9 @@ func ServerLoop(listenPort int) {
 	port = listenPort
 
 	tcpAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%d", port))
-	listener, err := net.ListenTCP("tcp", tcpAddr)
+	c.listener, err = net.ListenTCP("tcp", tcpAddr)
 
-	ofc := NewOFController()
+	ofc := NewSimpleOFController()
 	GetAppManager().RegistApplication(ofc)
 
 	if err != nil {
@@ -74,12 +43,26 @@ func ServerLoop(listenPort int) {
 
 	// wait for connect from switch
 	for {
-		conn, err := listener.AcceptTCP()
+		conn, err := c.listener.AcceptTCP()
 		if err != nil {
 			return
 		}
+		c.conns = append(c.conns, conn)
 		go handleConnection(conn)
 	}
+}
+
+func (c *OFController) Stop() {
+	err := c.listener.Close()
+	fmt.Println(err)
+
+	for idx := range c.conns {
+		err = c.conns[idx].Close()
+		fmt.Println(err)
+	}
+
+	c.listener = nil
+	c.conns = make([]*net.TCPConn, 0)
 }
 
 /**
@@ -99,4 +82,48 @@ func handleConnection(conn *net.TCPConn) {
 	// launch goroutine
 	go dp.recvLoop()
 	go dp.sendLoop()
+}
+
+/**
+ * basic controller
+ */
+type SimpleOFController struct {
+	echoInterval int32 // echo interval
+}
+
+func NewSimpleOFController() *SimpleOFController {
+	ofc := new(SimpleOFController)
+	ofc.echoInterval = 60
+	return ofc
+}
+
+// func (c *OFController) HandleHello(msg *ofp13.OfpHello, dp *Datapath) {
+// 	fmt.Println("recv Hello")
+// 	// send feature request
+// 	featureReq := ofp13.NewOfpFeaturesRequest()
+// 	Send(dp, featureReq)
+// }
+
+func (c *SimpleOFController) HandleSwitchFeatures(msg *ofp13.OfpSwitchFeatures, dp *Datapath) {
+	fmt.Println("recv SwitchFeatures")
+	// handle FeatureReply
+	dp.datapathId = msg.DatapathId
+}
+
+func (c *SimpleOFController) HandleEchoRequest(msg *ofp13.OfpHeader, dp *Datapath) {
+	// send EchoReply
+	echo := ofp13.NewOfpEchoReply()
+	(*dp).Send(echo)
+}
+
+func (c *SimpleOFController) ConnectionUp() {
+	// handle connection up
+}
+
+func (c *SimpleOFController) ConnectionDown() {
+	// handle connection down
+}
+
+func (c *SimpleOFController) sendEchoLoop() {
+	// send echo request forever
 }
