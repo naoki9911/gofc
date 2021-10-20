@@ -308,6 +308,15 @@ const (
 // ofp_action_type
 const (
 	OFPAT_OUTPUT       = 0
+	OFPAT_SET_VLAN_VID = 1
+	OFPAT_SET_VLAN_PCP = 2
+	OFPAT_STRIP_VLAN   = 3
+	OFPAT_SET_DL_SRC   = 4
+	OFPAT_SET_DL_DST   = 5
+	OFPAT_SET_NW_SRC   = 6
+	OFPAT_SET_NW_DST   = 7
+	OFPAT_SET_TP_SRC   = 8
+	OFPAT_SET_TP_DST   = 9
 	OFPAT_COPY_TTL_OUT = 11
 	OFPAT_COPY_TTL_IN  = 12
 	OFPAT_SET_MPLS_TTL = 15
@@ -1012,6 +1021,17 @@ type OfpAction interface {
 type OfpActionHeader struct {
 	Type   uint16
 	Length uint16
+}
+
+type OfpActionDLSet struct {
+	ActionHeader OfpActionHeader
+	DLAddr       net.HardwareAddr
+	Pad          [4]byte
+}
+
+type OfpActionNWSet struct {
+	ActionHeader OfpActionHeader
+	NWAddr       net.IP
 }
 
 type OfpActionOutput struct {

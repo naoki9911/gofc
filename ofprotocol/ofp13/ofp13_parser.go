@@ -3904,6 +3904,12 @@ func ParseAction(packet []byte) (action OfpAction) {
 	case OFPAT_OUTPUT:
 		action = NewOfpActionOutput(0, 0)
 		action.Parse(packet[index:])
+	case OFPAT_SET_DL_DST, OFPAT_SET_DL_SRC:
+		action = NewOfpActionDLDst()
+		action.Parse(packet[index:])
+	case OFPAT_SET_NW_DST, OFPAT_SET_NW_SRC:
+		action = NewOfpActionNWDst()
+		action.Parse(packet[index:])
 	case OFPAT_COPY_TTL_OUT:
 		action = NewOfpActionCopyTtlOut()
 		action.Parse(packet[index:])
@@ -4005,6 +4011,104 @@ func (a *OfpActionOutput) Size() int {
 }
 
 func (a *OfpActionOutput) OfpActionType() uint16 {
+	return a.ActionHeader.Type
+}
+
+/*
+ * OfpActionDLSet
+ */
+func NewOfpActionDLSrc() *OfpActionDLSet {
+	header := NewOfpActionHeader(OFPAT_SET_DL_SRC, 16)
+	action := new(OfpActionDLSet)
+	action.ActionHeader = header
+	return action
+}
+
+func NewOfpActionDLDst() *OfpActionDLSet {
+	header := NewOfpActionHeader(OFPAT_SET_DL_DST, 16)
+	action := new(OfpActionDLSet)
+	action.ActionHeader = header
+	return action
+}
+
+func (a *OfpActionDLSet) Serialize() []byte {
+	index := 0
+	packet := make([]byte, a.Size())
+
+	// ActionHeader must be 64-bit aligned when it is used in it's own terms.
+	// But used as Header of any Action, in here ActionOutput,
+	// alignment is adjusted in terms of whole of Action structure.
+	// Because of that, the size of ActionHeader here is 4.
+	h_packet := a.ActionHeader.Serialize()
+	copy(packet[index:], h_packet)
+	index += 4
+
+	copy(packet[index:], a.DLAddr)
+	return packet
+}
+
+func (a *OfpActionDLSet) Parse(packet []byte) {
+	index := 0
+	a.ActionHeader.Parse(packet[index:])
+	index += 4
+
+	a.DLAddr = net.HardwareAddr(packet[index : index+6])
+}
+
+func (a *OfpActionDLSet) Size() int {
+	return 16
+}
+
+func (a *OfpActionDLSet) OfpActionType() uint16 {
+	return a.ActionHeader.Type
+}
+
+/*
+ * OfpActionNWSet
+ */
+func NewOfpActionNWSrc() *OfpActionNWSet {
+	header := NewOfpActionHeader(OFPAT_SET_NW_SRC, 8)
+	action := new(OfpActionNWSet)
+	action.ActionHeader = header
+	return action
+}
+
+func NewOfpActionNWDst() *OfpActionNWSet {
+	header := NewOfpActionHeader(OFPAT_SET_NW_DST, 8)
+	action := new(OfpActionNWSet)
+	action.ActionHeader = header
+	return action
+}
+
+func (a *OfpActionNWSet) Serialize() []byte {
+	index := 0
+	packet := make([]byte, a.Size())
+
+	// ActionHeader must be 64-bit aligned when it is used in it's own terms.
+	// But used as Header of any Action, in here ActionOutput,
+	// alignment is adjusted in terms of whole of Action structure.
+	// Because of that, the size of ActionHeader here is 4.
+	h_packet := a.ActionHeader.Serialize()
+	copy(packet[index:], h_packet)
+	index += 4
+
+	copy(packet[index:], a.NWAddr.To4())
+	return packet
+}
+
+func (a *OfpActionNWSet) Parse(packet []byte) {
+	index := 0
+	a.ActionHeader.Parse(packet[index:])
+	index += 4
+
+	a.NWAddr = net.IP(packet[index : index+4])
+}
+
+func (a *OfpActionNWSet) Size() int {
+	return 8
+}
+
+func (a *OfpActionNWSet) OfpActionType() uint16 {
 	return a.ActionHeader.Type
 }
 
