@@ -3904,6 +3904,9 @@ func ParseAction(packet []byte) (action OfpAction) {
 	case OFPAT_OUTPUT:
 		action = NewOfpActionOutput(0, 0)
 		action.Parse(packet[index:])
+	case OFPAT_SET_VLAN_VID:
+		action = NewOfpActionSetVlanVid()
+		action.Parse(packet[index:])
 	case OFPAT_SET_DL_DST, OFPAT_SET_DL_SRC:
 		action = NewOfpActionDLDst()
 		action.Parse(packet[index:])
@@ -4011,6 +4014,48 @@ func (a *OfpActionOutput) Size() int {
 }
 
 func (a *OfpActionOutput) OfpActionType() uint16 {
+	return a.ActionHeader.Type
+}
+
+/*
+ * OfpActionSetVlanVid
+ */
+func NewOfpActionSetVlanVid() *OfpActionSetVlanVid {
+	header := NewOfpActionHeader(OFPAT_SET_VLAN_VID, 8)
+	action := new(OfpActionSetVlanVid)
+	action.ActionHeader = header
+	return action
+}
+
+func (a *OfpActionSetVlanVid) Serialize() []byte {
+	index := 0
+	packet := make([]byte, a.Size())
+
+	// ActionHeader must be 64-bit aligned when it is used in it's own terms.
+	// But used as Header of any Action, in here ActionOutput,
+	// alignment is adjusted in terms of whole of Action structure.
+	// Because of that, the size of ActionHeader here is 4.
+	h_packet := a.ActionHeader.Serialize()
+	copy(packet[index:], h_packet)
+	index += 4
+
+	binary.BigEndian.PutUint16(packet[index:], a.VlanVid)
+	return packet
+}
+
+func (a *OfpActionSetVlanVid) Parse(packet []byte) {
+	index := 0
+	a.ActionHeader.Parse(packet[index:])
+	index += 4
+
+	a.VlanVid = binary.BigEndian.Uint16(packet[index:])
+}
+
+func (a *OfpActionSetVlanVid) Size() int {
+	return 8
+}
+
+func (a *OfpActionSetVlanVid) OfpActionType() uint16 {
 	return a.ActionHeader.Type
 }
 

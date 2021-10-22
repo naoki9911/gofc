@@ -1024,6 +1024,12 @@ type OfpActionHeader struct {
 	Length uint16
 }
 
+type OfpActionSetVlanVid struct {
+	ActionHeader OfpActionHeader
+	VlanVid      uint16
+	Pad          [2]byte
+}
+
 type OfpActionDLSet struct {
 	ActionHeader OfpActionHeader
 	DLAddr       net.HardwareAddr
