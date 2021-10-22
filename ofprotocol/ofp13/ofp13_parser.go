@@ -7,6 +7,9 @@ import (
 )
 
 func Parse(packet []byte) (msg OFMessage) {
+	if len(packet) == 0 {
+		return
+	}
 	switch packet[1] {
 	case OFPT_HELLO:
 		msg = new(OfpHello)
